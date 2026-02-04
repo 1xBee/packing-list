@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="src/favicon-K.png">
+    <link rel="stylesheet" href="src/styles.css">
+    <title>Inventory Box Manager</title>
+</head>
+<body>
+    <!-- Authentication Modal -->
+    <div id="authModal" class="auth-modal-overlay" style="display: none;">
+        <div class="auth-modal">
+            <div class="auth-modal-title">Database Access</div>
+            <div class="auth-modal-subtitle">Enter password to access inventory data</div>
+            <button class="auth-close-btn" onclick="hideAuthModal()" title="Close without accessing data">×</button>
+            <div class="auth-modal-controls">
+                <input type="password" id="passwordInput" class="auth-password-input" placeholder="Password" onkeydown="handlePasswordKeydown(event)">
+                <div id="authError" class="auth-error" style="display: none;"></div>
+            </div>
+            <div class="auth-modal-buttons">
+                <button class="auth-submit-btn" onclick="submitPassword()">Access Database</button>
+            </div>
+            <div class="auth-loading" id="authLoading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span>Connecting to database...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-controls">
+        <button class="settings-btn" id="settingsBtn" onclick="toggleControlsMenu()">
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+        </button>
+        
+        <div class="controls-menu" id="controlsMenu">
+            <h3>Controls</h3>
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+                <span>Refresh Data</span>
+            </button>
+            <a class="bookmarklet-btn" href="javascript:(function(){var urlPath=window.location.pathname;var inventoryUrl='https://print-list.vercel.app';var editDeliveryMatch=urlPath.match(/\/Deliveries\/Edit\/(\d+)/);var invoiceDeliveryMatch=urlPath.match(/\/Deliveries\/(\d+)\/Invoice/);var deliveryId=null;if(editDeliveryMatch){deliveryId=editDeliveryMatch[1];}else if(invoiceDeliveryMatch){deliveryId=invoiceDeliveryMatch[1];}if(!deliveryId){window.open(inventoryUrl,'_blank');return;}var button=document.createElement('div');button.style.cssText='position:fixed;top:10px;right:10px;background:#4CAF50;color:white;padding:10px;border-radius:5px;z-index:9999;font-family:Arial;cursor:pointer;';button.textContent='Loading delivery data...';document.body.appendChild(button);var apiUrl='/api/deliveries/'+deliveryId;fetch(apiUrl).then(function(response){if(!response.ok){throw new Error('HTTP '+response.status);}return response.json();}).then(function(data){if(!data.items||!Array.isArray(data.items)){throw new Error('No items found in response');}var filteredItems=data.items.filter(function(item){return item.qty&&item.qty>0&&item.path&&item.path.toLowerCase().startsWith('furniture');}).map(function(item){return{id:item.id,qty:item.qty};});if(filteredItems.length===0){button.textContent='No furniture items found in this delivery,';button.style.background='#ff9800';setTimeout(function(){button.remove();},3000);return;}var itemsParam=encodeURIComponent(JSON.stringify(filteredItems));var boxManagerUrl=inventoryUrl+'?items='+itemsParam;window.open(boxManagerUrl,'_blank');button.textContent='Sent '+filteredItems.length+' furniture items to inventory';button.style.background='#4CAF50';setTimeout(function(){button.remove();},3000);}).catch(function(error){console.error('Error:',error);button.textContent='Error: '+error.message;button.style.background='#f44336';setTimeout(function(){button.remove();},5000);});})();" title="Run delivery script">
+                print-list
+            </a>
+
+        </div>
+
+        <button class="print-btn" id="printBtn" onclick="printList()" disabled>Print List</button>
+    </div>
+
+    <div class="container">
+        <div class="left-panel" id="leftPanel">
+            <h2 class="panel-title" style="margin-top: 20px;">Items Catalog</h2>
+            <div id="collections-container">
+                <div class="no-data" id="leftPanelStatus">
+                    <div class="loading-spinner"></div>
+                    <span>Loading inventory data...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="resize-handle" id="resizeHandle"></div>
+        
+        <div class="right-panel" id="rightPanel">
+            <div class="print-title">ITEM LIST</div>
+            <div class="right-panel-header">
+                <h2 class="right-panel-title">Selected Items for Printing</h2>
+                <button class="remove-all-btn" id="removeAllBtn" onclick="removeAllItems()" style="display: none;">Remove All</button>
+            </div>
+            
+            <div class="title-input-container">
+                <input type="text" id="printTitleInput" class="title-input" placeholder="ITEM LIST" />
+                <div class="title-input-underline"></div>
+            </div>
+            
+            <div id="selected-items-container">
+                <div class="no-data">Click "Add" buttons to add items here</div>
+            </div>
+            <div class="print-credit"><b>kraus</b>olutions</div>
+        </div>
+    </div>
+
+    <!-- Remove Popup -->
+    <div id="removePopupOverlay" class="remove-popup-overlay" onclick="hideRemovePopup(event)">
+        <div class="remove-popup" onclick="event.stopPropagation()">
+            <div class="remove-popup-title">Remove Items</div>
+            <div class="remove-popup-controls">
+                <label>Remove quantity:</label>
+                <input type="number" id="removeQtyInput" class="remove-popup-qty" value="1" min="1" onkeydown="handleRemoveInputKeydown(event)">
+            </div>
+            <div class="remove-popup-buttons">
+                <button class="remove-popup-btn cancel" onclick="hideRemovePopup()">Cancel</button>
+                <button class="remove-popup-btn remove" onclick="confirmRemove()">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/ui-manager.js"></script>
+    <script src="src/data-manager.js"></script>
+    <script src="src/alphabet_navigator.js"></script>
+    <script src="src/query-items-handler.js"></script>
+    <script>
+    // Try to load data immediately when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadData();
+    });
+    </script>
+    <!--from Vercel, for Web Analytics-->
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <!--from Vercel, for speed insights-->
+    <script>
+        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+</body>
+</html>

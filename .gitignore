@@ -1,0 +1,5 @@
+.vercel
+node_modules
+config
+.env*.local
+supabase_client copy.js

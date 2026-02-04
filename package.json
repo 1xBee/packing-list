@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.56.0"
+  },
+  "name": "print_list",
+  "description": "readme coming...",
+  "version": "1.0.0",
+  "main": "",
+  "type": "module",
+  "scripts": {
+    "test": "test.js"
+  },
+  "author": "leibish",
+  "license": "ISC"
+}
