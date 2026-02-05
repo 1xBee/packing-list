@@ -36,7 +36,7 @@ async function handleSuccess(req, res, newCookie) {
 /**
  * Error callback - send 401 unauthorized
  */
-function handleError(res, reason) {
+function handleError(req, res, reason) {
     console.error('Authorization failed:', reason);
     res.status(401).json({ error: 'Unauthorized'}).end();
 }
@@ -45,7 +45,7 @@ function handleError(res, reason) {
  * Main API handler
  */
 export default async function handler(req, res) {
-
+    
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed' }).end();
     }
